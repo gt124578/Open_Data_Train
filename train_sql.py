@@ -58,7 +58,7 @@ def SQL(a):
 
 
 
-#print(SQL("SELECT DISTINCT DATE FROM tgvmax_trajets WHERE Origine LIKE 'COMMERCY'"))
+print(SQL("SELECT DISTINCT DATE FROM tgvmax_trajets WHERE Origine LIKE 'COMMERCY'"))
 
 
 
