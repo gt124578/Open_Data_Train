@@ -31,8 +31,6 @@ geolocator = Nominatim(user_agent="mon_appli_itineraire_gradio", timeout=10)
 # ==============================================================================
 # BLOC 2 : VOS FONCTIONS UTILITAIRES ET PRINCIPALES (INCHANGÉES)
 # ==============================================================================
-# (Toutes vos fonctions de l'étape précédente sont recopiées ici)
-
 def clean_city_name(city_name):
     if not isinstance(city_name, str): return ""
     cleaned_name = re.sub(r'\s*\([^)]*\)$', '', city_name).strip()
@@ -108,13 +106,11 @@ def trouver_train_ideal(ville_depart, ville_arrivee, heure_min_depart_str):
     return cur.fetchone()
 
 def generer_carte_recommandation(ville_depart, destinations, itineraire_choisi, ville_choisie):
-    # Cette fonction retourne maintenant un objet Folium
     try:
         loc_depart = geolocator.geocode(clean_city_name(ville_depart))
         m = folium.Map(location=[loc_depart.latitude, loc_depart.longitude], zoom_start=7)
     except:
         m = folium.Map(location=[46.2276, 2.2137], zoom_start=5)
-    # ... le reste de la fonction est inchangé ...
     if loc_depart: folium.Marker(location=[loc_depart.latitude, loc_depart.longitude], popup=f"<b>Départ : {ville_depart}</b>", icon=folium.Icon(color='red', icon='train', prefix='fa')).add_to(m)
     try:
         loc_choisie = geolocator.geocode(clean_city_name(ville_choisie))
@@ -124,8 +120,7 @@ def generer_carte_recommandation(ville_depart, destinations, itineraire_choisi, 
         if dest[1] != ville_choisie:
             try:
                 loc_dest = geolocator.geocode(clean_city_name(dest[1]))
-                if loc_dest: folium.Marker(location=[loc_dest.latitude, loc_dest.longitude], popup=f"<i>{dest[1]}</i><br>Durée : {dest[2]}", icon=folium.Icon(color='blue', icon='info-sign')
-).add_to(m)
+                if loc_dest: folium.Marker(location=[loc_dest.latitude, loc_dest.longitude], popup=f"<i>{dest[1]}</i><br>Durée : {dest[2]}", icon=folium.Icon(color='blue', icon='info-sign')).add_to(m)
             except: continue
     for i, lieu in enumerate(itineraire_choisi):
         popup_html = f"<b>{i+1}. {lieu['nom']}</b><br>Visite: {lieu['temps_visite_min']} min"
@@ -137,46 +132,28 @@ def generer_carte_recommandation(ville_depart, destinations, itineraire_choisi, 
 # BLOC 3 : LA FONCTION PRINCIPALE POUR GRADIO
 # ==============================================================================
 
-def trouver_escapade(ville_depart, heure_depart_souhaitee_str, temps_trajet_max, temps_sur_place_heures, progress=gr.Progress()):
+def trouver_escapade(ville_depart, heure_depart_souhaitee_str, temps_trajet_max, temps_sur_place_heures, progress=gr.Progress(track_tqdm=True)):
     """
     Cette fonction unique prend toutes les entrées de l'utilisateur et retourne
     les sorties formatées pour l'interface Gradio.
     """
-    # Debugging print statements - Keep these for now to help with potential future issues
-    print(f"Received ville_depart: {ville_depart}")
-    print(f"Received heure_depart_souhaitee_str: {heure_depart_souhaitee_str}")
-    print(f"Type of heure_depart_souhaitee_str: {type(heure_depart_souhaitee_str)}")
-    print(f"Received temps_trajet_max: {temps_trajet_max}")
-    print(f"Received temps_sur_place_heures: {temps_sur_place_heures}")
-
-
-    progress(0, desc="Starting search...")
-    # Conversion et préparation des entrées
+    progress(0, desc="Début de la recherche...")
     temps_sur_place_min = int(temps_sur_place_heures * 60)
-    # Validate the time format
-    if not heure_depart_souhaitee_str:
-         return "### Erreur : Veuillez entrer une heure de départ souhaitée (HH:MM).", None
-
+    
     try:
         datetime.strptime(heure_depart_souhaitee_str, "%H:%M")
-    except ValueError:
-        return "### Erreur : Format d'heure de départ invalide. Veuillez utiliser le format HH:MM (ex: 09:00).", None
+    except (ValueError, TypeError):
+        return "### Erreur : Format d'heure invalide. Veuillez utiliser HH:MM.", None
 
-
-    progress(0.1, desc="Finding potential destinations...")
-    # --- 2. Exécuter votre logique de recherche ---
+    progress(0.1, desc="Recherche des destinations possibles...")
     destinations_candidates = trouver_destinations_par_temps(ville_depart, temps_trajet_max)
     destinations_uniques_dict = {dest[1]: dest for dest in reversed(destinations_candidates)}
     destinations_uniques_list = list(destinations_uniques_dict.values())
 
     meilleure_destination_info, meilleur_itineraire_visite, max_score = None, [], -1
 
-    total_destinations = len(destinations_uniques_list)
-    for i, dest_info in enumerate(destinations_uniques_list):
-        ville_arrivee = dest_info[1] # Get the destination name
-        progress((i + 1) / total_destinations * 0.8 + 0.1, desc=f"Analyzing {ville_arrivee}...") # Progress from 0.1 to 0.9
-
-        lieux = get_lieux_touristiques(ville_arrivee)
+    for dest_info in gr.tqdm(destinations_uniques_list, desc="Analyse des destinations"):
+        lieux = get_lieux_touristiques(dest_info[1])
         if not lieux: continue
         lieux_tries = sorted(lieux, key=lambda x: x['score_pertinence'], reverse=True)
         itineraire_ville, _ = creer_itineraire_visite_avec_trajet(lieux_tries, temps_sur_place_min)
@@ -184,130 +161,23 @@ def trouver_escapade(ville_depart, heure_depart_souhaitee_str, temps_trajet_max,
         if score_actuel > max_score:
             max_score, meilleure_destination_info, meilleur_itineraire_visite = score_actuel, dest_info, itineraire_ville
 
-    progress(0.9, desc="Formatting results...")
-    # --- 3. Formater les sorties pour Gradio ---
+    progress(0.9, desc="Formatage des résultats...")
     if not meilleure_destination_info:
-        resultat_md = "### Désolé, aucune destination trouvée...\n" \
-                      "Aucune destination ne correspond à tous vos critères. Essayez d'augmenter le temps de trajet ou le temps sur place."
-        return resultat_md, None
+        return "### Désolé, aucune destination trouvée...", None
 
     ville_recommandee = meilleure_destination_info[1]
     train_aller = trouver_train_ideal(ville_depart, ville_recommandee, heure_depart_souhaitee_str)
 
     if not train_aller:
-        resultat_md = f"### Destination trouvée: {ville_recommandee}, mais...\n" \
-                      f"Désolé, aucun train aller trouvé depuis {ville_depart} vers {ville_recommandee} après {heure_depart_souhaitee_str}."
-        return resultat_md, None
+        return f"### Destination trouvée : {ville_recommandee}, mais...", None
 
-    # Construction du texte de résultat en Markdown
     resultat_md = f"## 🏆 Votre Escapade Recommandée : **{ville_recommandee}**\n---\n"
-
-    # Itinéraire détaillé
     resultat_md += "### 🚆 Itinéraire Détaillé\n"
     resultat_md += f"**1. Train Aller**\n- Départ de **{train_aller[0]}** à **{train_aller[3]}**\n- Arrivée à **{train_aller[1]}** à **{train_aller[4]}**\n- *Durée : {train_aller[2]}*\n\n"
-
     resultat_md += "**2. Visite sur Place**\n"
-    if meilleur_itineraire_visite:
-        heure_arrivee_aller_dt = datetime.strptime(train_aller[4], '%H:%M:%S')
-        heure_actuelle_dt = heure_arrivee_aller_dt
-
-        for i, lieu in enumerate(meilleur_itineraire_visite):
-            if i > 0:
-                temps_trajet_a_pied_min = lieu.get('trajet_depuis_precedent', 0)
-                heure_arrivee_lieu_dt = heure_actuelle_dt + timedelta(minutes=temps_trajet_a_pied_min)
-                resultat_md += f"- *🚶 Trajet à pied : ~{temps_trajet_a_pied_min} min (Arrivée estimée : {heure_arrivee_lieu_dt.strftime('%H:%M')})*\n"
-                heure_actuelle_dt = heure_arrivee_lieu_dt
-
-            temps_visite_lieu_min = lieu['temps_visite_min']
-            heure_fin_visite_lieu_dt = heure_actuelle_dt + timedelta(minutes=temps_visite_lieu_min)
-            resultat_md += f"- 🏛️ Visite de **{lieu['nom']}** ({temps_visite_lieu_min} min). (Fin estimée : {heure_fin_visite_lieu_dt.strftime('%H:%M')})\n"
-            heure_actuelle_dt = heure_fin_visite_lieu_dt
-
-        heure_fin_visite_totale_dt = heure_actuelle_dt
-    else:
-         resultat_md += "     Aucun itinéraire de visite détaillé trouvé pour cette destination dans le temps imparti.\n"
-         # If no visit itinerary is found, the end of the visit is just the arrival time + buffer
-         heure_arrivee_aller_dt = datetime.strptime(train_aller[4], '%H:%M:%S')
-         heure_fin_visite_totale_dt = heure_arrivee_aller_dt + timedelta(minutes=30) # Add a small buffer
-
-
-    # Calcul du train retour
-    heure_min_depart_retour_str = heure_fin_visite_totale_dt.strftime('%H:%M:%S')
-    train_retour = trouver_train_ideal(ville_recommandee, ville_depart, heure_min_depart_retour_str)
-
-
-    resultat_md += "\n**3. Train Retour**\n"
-    if train_retour:
-        heure_depart_retour_dt = datetime.strptime(train_retour[3], '%H:%M:%S')
-        heure_arrivee_retour_dt = datetime.strptime(train_retour[4], '%H:%M:%S')
-        temps_trajet_retour_td = heure_arrivee_retour_dt - heure_depart_retour_dt
-        if temps_trajet_retour_td.total_seconds() < 0: # Handle overnight journeys
-             temps_trajet_retour_td += timedelta(days=1)
-
-        resultat_md += f"- Départ de **{train_retour[0]}** à **{train_retour[3]}** ({heure_depart_retour_dt.strftime('%H:%M')})\n- Arrivée à **{train_retour[1]}** à **{train_retour[4]}** ({heure_arrivee_retour_dt.strftime('%H:%M')})\n- *Durée : {train_retour[2]}*\n"
-
-        # Calcul du temps total
-        heure_depart_aller_dt = datetime.strptime(train_aller[3], '%H:%M:%S') # Use departure time of the first train
-        temps_total_td = heure_arrivee_retour_dt - heure_depart_aller_dt
-        if temps_total_td.total_seconds() < 0: # Handle cases spanning midnight
-            temps_total_td += timedelta(days=1)
-
-        heures, remainder = divmod(temps_total_td.total_seconds(), 3600)
-        minutes, seconds = divmod(remainder, 60)
-        resultat_md += f"\n**Temps total estimé pour l'ensemble du voyage : {int(heures)}h {int(minutes)}min {int(seconds)}s**"
-
-
-    else:
-         resultat_md += f"- *Aucun train retour trouvé depuis {ville_recommandee} vers {ville_depart} après {heure_min_depart_retour_str}.*"
-
-
-    progress(0.95, desc="Generating map...")
-    # Génération de la carte
-    carte_finale = generer_carte_recommandation(ville_depart, destinations_candidates, meilleur_itineraire_visite, ville_recommandee)
-
-    # Gradio a besoin du chemin vers un fichier HTML pour l'afficher
-    carte_finale.save("carte_resultat.html")
-    progress(1.0, desc="Done!")
-
-    #il enregistre dans le drive : /content/carte_resultat.html
-    return resultat_md, "carte_resultat.html"
-
-
-# ==============================================================================
-# BLOC 4 : CRÉATION ET LANCEMENT DE L'INTERFACE GRADIO
-# ==============================================================================
-
-with gr.Blocks(theme=gr.themes.Soft()) as demo:
-    gr.Markdown("# 🚄 Trouvez votre prochaine escapade en train")
-    gr.Markdown("Entrez vos critères de voyage pour obtenir une recommandation de destination et un itinéraire complet.")
-
-    with gr.Row():
-        with gr.Column(scale=1):
-            ville_depart_input = gr.Textbox(label="📍 Ville de départ", value="PARIS (intramuros)")
-            # Change from gr.DateTime to gr.Textbox for HH:MM input
-            heure_depart_input = gr.Textbox(label="🕗 Heure de départ souhaitée (HH:MM)", value="09:00", info="Format HH:MM (ex: 09:00)")
-            temps_trajet_max_input = gr.Textbox(label="🚆 Temps de trajet maximum", value="02:30:00", info="Format HH:MM:SS")
-            temps_sur_place_input = gr.Slider(label="⏳ Temps souhaité sur place (en heures)", minimum=1, maximum=12, step=0.5, value=6)
-            btn = gr.Button("Trouver mon escapade !", variant="primary")
-
-        with gr.Column(scale=2):
-            resultat_output = gr.Markdown(label="Votre Itinéraire Recommandé")
-            carte_output = gr.HTML(label="Carte du Voyage")
-
-    btn.click(fn=trouver_escapade,
-              inputs=[ville_depart_input, heure_depart_input, temps_trajet_max_input, temps_sur_place_input],
-              outputs=[resultat_output, carte_output])
-
-    gr.Examples(
-        examples=[
-            ["LYON (gares)", "09:00", "01:30:00", 4],
-            ["BORDEAUX ST JEAN", "07:30", "02:00:00", 8],
-            ["MARSEILLE ST CHARLES", "10:00", "01:45:00", 5],
-            ["LILLE (intramuros)", "09:00", "02:00:00", 5] # Added example for Lille
-        ],
-        inputs=[ville_depart_input, heure_depart_input, temps_trajet_max_input, temps_sur_place_input],
-    )
-
-print("🚀 Lancement de l'interface Gradio...")
-# share=True crée un lien public temporaire pour partager votre application
-demo.launch(debug=True, share=True)
+    
+    heure_arrivee_aller_dt = datetime.strptime(train_aller[4], '%H:%M:%S')
+    heure_actuelle_dt = heure_arrivee_aller_dt
+    for i, lieu in enumerate(meilleur_itineraire_visite):
+        if i > 0:
+            temps_trajet_a_pied_min = lieu.get('tra
