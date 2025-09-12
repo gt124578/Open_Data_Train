@@ -303,11 +303,11 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
 
     with gr.Row():
         with gr.Column(scale=1):
-            ville_depart_input = gr.Textbox(label="📍 Ville de départ", value="PARIS (intramuros)")
+            ville_depart_input = gr.Textbox(label="📍 Ville de départ", value="MARMANDE")
             # Use gr.Textbox for time input
             heure_depart_input = gr.Textbox(label="🕗 Heure de départ souhaitée (HH:MM:SS)", value="08:00:00", info="Format HH:MM:SS")
-            temps_trajet_max_input = gr.Textbox(label="🚆 Temps de trajet maximum", value="02:30:00", info="Format HH:MM:SS")
-            temps_sur_place_input = gr.Slider(label="⏳ Temps souhaité sur place (en heures)", minimum=1, maximum=12, step=0.5, value=6)
+            temps_trajet_max_input = gr.Textbox(label="🚆 Temps de trajet maximum", value="02:00:00", info="Format HH:MM:SS")
+            temps_sur_place_input = gr.Slider(label="⏳ Temps souhaité sur place (en heures)", minimum=1, maximum=12, step=0.5, value=5)
             btn = gr.Button("Trouver mon escapade !", variant="primary")
 
         with gr.Column(scale=2):
@@ -321,10 +321,10 @@ with gr.Blocks(theme=gr.themes.Soft()) as demo:
 
     gr.Examples(
         examples=[
-            ["LYON (gares)", "09:00:00", "01:30:00", 4],
+            ["ANTIBES", "09:00:00", "02:00:00", 5],
+            ["NICE", "09:00:00", "01:30:00", 4],
             ["BORDEAUX ST JEAN", "07:30:00", "02:00:00", 8],
-            ["MARSEILLE ST CHARLES", "10:00:00", "01:45:00", 5],
-            ["LILLE (intramuros)", "09:00:00", "02:00:00", 5]
+            ["MARSEILLE ST CHARLES", "10:00:00", "01:45:00", 5]
         ],
         inputs=[ville_depart_input, heure_depart_input, temps_trajet_max_input, temps_sur_place_input],
     )
