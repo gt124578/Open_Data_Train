@@ -22,11 +22,28 @@ This project was developed as part of our curriculum at Polytech Nice Sophia, wi
 
 Here's a quick look at the application's workflow:
 
-| 1. Initial Interface                               | 2. Calculated Itinerary                            |
-| -------------------------------------------------- | -------------------------------------------------- |
-| !<Start Screen>illustrations/app_start.png       | !<Itinerary Result>(illustrations/itinerary_result.png) |
-| **3. Interactive Map**                             | **4. Full Result View**                            |
-| !<Map View>(illustrations/map_result.png)           | !<Full Result View>(illustrations/full_result.png)     |
+<table>
+  <tr>
+    <td align="center"><strong>1. Initial Interface</strong></td>
+    <td align="center"><strong>2. Calculated Itinerary</strong></td>
+  </tr>
+  <tr>
+    <td><img src="illustrations/app_start.png" width="400"></td>
+    <td><img src="illustrations/itinerary_result.png" width="400"></td>
+  </tr>
+</table>
+
+<table>
+  <tr>
+    <td align="center"><strong>3. Interactive Map</strong></td>
+    <td align="center"><strong>4. Full Result View</strong></td>
+  </tr>
+  <tr>
+    <td><img src="illustrations/map_result.png" width="400"></td>
+    <td><img src="illustrations/full_result.png" width="400"></td>
+  </tr>
+</table>
+
 
 ---
 
@@ -64,8 +81,8 @@ To run this project locally, please follow these steps.
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
+git clone https://github.com/gt124578/Open_Data_Train
+cd Open_Data_Train
 ```
 
 ### 2. Set Up a Virtual Environment (Recommended)
@@ -99,7 +116,7 @@ Make sure the `tgvmax.db` database file is located in the root directory of the 
 Launch the Gradio web application by running the Python script.
 
 ```bash
-python train2.py
+python train_project.py
 ```
 
 This will start a local web server. Open the URL provided in your terminal (usually `http://127.0.0.1:7860`) in your web browser to use the application.
