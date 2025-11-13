@@ -71,7 +71,7 @@ This project demonstrates a complete data pipeline, from raw data ingestion to a
 
 ## Setup and Installation
 
-To run this project locally, please follow these steps.
+To run this project locally, please follow these steps. (Note : You can use .ipynb in colab, just config a correct path for tgvmax.db in your google drive)
 
 ### Prerequisites
 
