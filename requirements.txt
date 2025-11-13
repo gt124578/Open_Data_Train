@@ -1,0 +1,7 @@
+gradio
+geopy
+folium
+pandas
+requests
+gradio-folium
+sqlite3
