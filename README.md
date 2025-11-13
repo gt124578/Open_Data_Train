@@ -28,8 +28,8 @@ Here's a quick look at the application's workflow:
     <td align="center"><strong>2. Calculated Itinerary</strong></td>
   </tr>
   <tr>
-    <td><img src="illustrations/app_start.png" width="400"></td>
-    <td><img src="illustrations/itinerary_result.png" width="400"></td>
+    <td><img src="illustrations/app_start.png" width="500"></td>
+    <td><img src="illustrations/itinerary_result.png" width="500"></td>
   </tr>
 </table>
 
@@ -39,8 +39,8 @@ Here's a quick look at the application's workflow:
     <td align="center"><strong>4. Full Result View</strong></td>
   </tr>
   <tr>
-    <td><img src="illustrations/map_result.png" width="400"></td>
-    <td><img src="illustrations/full_result.png" width="400"></td>
+    <td><img src="illustrations/map_result.png" width="500"></td>
+    <td><img src="illustrations/final_result.png" width="500"></td>
   </tr>
 </table>
 
