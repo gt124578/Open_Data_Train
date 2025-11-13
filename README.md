@@ -24,7 +24,7 @@ Here's a quick look at the application's workflow:
 
 | 1. Initial Interface                               | 2. Calculated Itinerary                            |
 | -------------------------------------------------- | -------------------------------------------------- |
-| !<Start Screen>(illustrations/app_start.png)       | !<Itinerary Result>(illustrations/itinerary_result.png) |
+| !<Start Screen>illustrations/app_start.png       | !<Itinerary Result>(illustrations/itinerary_result.png) |
 | **3. Interactive Map**                             | **4. Full Result View**                            |
 | !<Map View>(illustrations/map_result.png)           | !<Full Result View>(illustrations/full_result.png)     |
 
